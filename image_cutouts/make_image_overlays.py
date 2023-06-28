@@ -16,6 +16,62 @@ plt.interactive(True)
 #############################################################
 ###functions
 
+def remove_extradim_info_from_header(header):
+    'clean up a fits header that has 4D info for a 2D object -- e.g. FIRST!'
+    
+    head = header.copy()
+    
+    hkeys = list(head.keys())
+    for key in hkeys:
+        if len(key)>0:
+            lastchar = key[-1]
+            if lastchar == '3' or lastchar == '4':
+                del head[key]
+    
+    return head
+    
+
+def radio_image_as_2d(file):
+    'takes 4D image file and outputs 2D HDU for ease of working with astropy on flat image'
+    
+    hdu = fits.open(file)
+    
+    imdata = hdu[0].data
+    ###extract 2D image array
+    if hdu[0].data.ndim == 4:
+        imdata = imdata[0][0]
+    
+        ###extract header info for 2D
+        head2d = hdu[0].header.copy()
+    
+        hkeys = list(head2d.keys())
+    
+        crkeys = ['CTYPE', 'CRVAL', 'CDELT', 'CRPIX', 'CUNIT']
+        cr3 = [c + '3' for c in crkeys]
+        cr4 = [c + '4' for c in crkeys]
+        badkeys = cr3 + cr4 + ['NAXIS3', 'NAXIS4']
+    
+        for key in hkeys:
+            if 'PC3' in key or 'PC4' in key or '_3' in key or '_4' in key:
+                badkeys.append(key)
+            if 'PC03' in key or 'PC04' in key or '_03' in key or '_04' in key:
+                badkeys.append(key)
+            if key in badkeys:
+                del(head2d[key])
+
+        head2d['NAXIS'] = 2
+
+    else:
+        head2d = remove_extradim_info_from_header(hdu[0].header)
+
+    ###create new 2D hdu
+    hdu2d = fits.PrimaryHDU(imdata)
+    hdu2d.header = head2d
+    hdulist2d = fits.HDUList(hdu2d)
+    
+    return(hdulist2d)
+
+
 
 def cont_levs(n_levs=6, rms=0.0035, base=2.0):
     'create list of log scaled contout levels'
@@ -68,13 +124,14 @@ def make_rgb_overlay(ofile, jfile, rfile,
     ###set up hdu and wcs
     ohdu = update_lsdr9_hdu_for_aplpy(ofile)
     wcs = WCS(ohdu[0].header)
+    radio = radio_image_as_2d(rfile)
     
     fig = plt.figure(figsize=figsize)
     fig = aplpy.FITSFigure(ohdu, figure=fig)
     fig.tick_labels.set_font(size=fontsize-1)
     fig.axis_labels.set_font(size=fontsize)
     fig.show_rgb(jfile)
-    fig.show_contour(rfile, levels=contour_levs,
+    fig.show_contour(radio, levels=contour_levs,
                      colors=contour_color, linewidths=1.2,
                      alpha=contalpha)
 
