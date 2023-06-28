@@ -143,7 +143,7 @@ if __name__ == '__main__':
                      host_ra=args.ra, host_dec=args.dec,
                      hostcolor='lime', contour_color='cyan',
                      figsize=(6,5), fontsize=13,
-                     contour_levs=cont_levs(),
+                     contour_levs=contour_levels,
                      sbsize=1*u.arcmin, sbcolor='w', sbwidth=2,
                      savefig=True, hostmarker_scale=1/20,
                      contalpha=1)
