@@ -20,14 +20,14 @@ warnings.simplefilter('ignore', category=AstropyWarning) ###mutes warnings in pr
 #########################################################################
 #########################################################################
 
-def iau_name(ra, dec, aprec=2, dp=5, prefix=''):
+def iau_name(position, aprec=2, dp=5, prefix=''):
+    '''
+    position: a SkyCoord object
+    '''
     ###truncated to dp so compatible with IAU standards
-    ra, dec = np.array(ra), np.array(dec)
-    
-    cat = SkyCoord(ra=ra, dec=dec, unit='deg')
-    
-    astring = cat.ra.to_string(sep='', unit='hour', precision=dp, pad=True)
-    dstring = cat.dec.to_string(sep='', precision=dp, pad=True, alwayssign=True)
+        
+    astring = position.ra.to_string(sep='', unit='hour', precision=dp, pad=True)
+    dstring = position.dec.to_string(sep='', precision=dp, pad=True, alwayssign=True)
     
     ###truncation index
     tinda = aprec+7
@@ -206,9 +206,7 @@ def download_cutouts(position, size, outdir='.', epoch=1, filename=None,
     outdir = trim_slash(outdir)
     
     ###setup file name
-    source_name = iau_name(ra=[position.ra.value],
-                           dec=[position.dec.value],
-                           aprec=2)[0]
+    source_name = iau_name(position, aprec=2)[0]
     if filename is None:
         filename = '_'.join([source_name, '-'.join(['VLASS', str(epoch)])])
         filename = '.'.join([filename, 'fits'])
